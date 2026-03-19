@@ -19,6 +19,7 @@ from .const import (
     COMMAND_SEGMENT_CLEAN,
     COMMAND_START,
     COMMAND_STOP,
+    MAP_VIEW_URL,
 )
 from .coordinator import ValetudoCoordinator
 from .entity import ValetudoRestEntity
@@ -100,6 +101,8 @@ class ValetudoRestVacuum(ValetudoRestEntity, StateVacuumEntity):
             "max_iterations": self.coordinator.data.get("segment_properties", {})
             .get("iterationCount", {})
             .get("max"),
+            "map_nonce": self.coordinator.data.get("map_nonce"),
+            "map_data_url": MAP_VIEW_URL.format(entry_id=self._entry_id),
         }
 
     async def async_start(self) -> None:

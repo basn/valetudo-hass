@@ -4,6 +4,7 @@ from datetime import timedelta
 
 DOMAIN = "valetudo_rest"
 PLATFORMS = ["vacuum", "sensor", "binary_sensor", "select"]
+MAP_VIEW_URL = "/api/valetudo_rest/{entry_id}/map"
 
 CONF_SCAN_INTERVAL = "scan_interval"
 DEFAULT_NAME = "Valetudo"
