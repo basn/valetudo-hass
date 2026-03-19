@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 from typing import Any
 
-from aiohttp import ClientSession
+from aiohttp import ClientError, ClientSession
 
 
 class ValetudoApiError(Exception):
@@ -21,16 +21,21 @@ class ValetudoApiClient:
 
     async def _request(self, method: str, path: str, payload: dict[str, Any] | None = None) -> Any:
         url = f"{self._base_url}{path}"
-        async with self._session.request(method, url, json=payload, timeout=15) as response:
-            if response.status >= 400:
+        try:
+            async with self._session.request(method, url, json=payload, timeout=15) as response:
+                if response.status >= 400:
+                    text = await response.text()
+                    raise ValetudoApiError(f"{method} {path} failed: {response.status} {text}")
+
+                if response.content_type == "application/json":
+                    return await response.json()
+
                 text = await response.text()
-                raise ValetudoApiError(f"{method} {path} failed: {response.status} {text}")
-
-            if response.content_type == "application/json":
-                return await response.json()
-
-            text = await response.text()
-            return text or None
+                return text or None
+        except ValetudoApiError:
+            raise
+        except (TimeoutError, asyncio.TimeoutError, ClientError, ValueError) as err:
+            raise ValetudoApiError(f"{method} {path} failed: {err}") from err
 
     async def get_state(self) -> dict[str, Any]:
         """Get robot state."""

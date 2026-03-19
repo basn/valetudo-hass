@@ -2,6 +2,12 @@
 
 Home Assistant custom integration for controlling a Valetudo robot via its REST API instead of MQTT.
 
+Personal project notice:
+
+- built for a single personal Home Assistant setup
+- vibecoded with iterative real-world testing
+- not production-grade software and no compatibility guarantees
+
 Status:
 
 - initial scaffold written by Codex against a live Valetudo 2026.02.0 robot
