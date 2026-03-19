@@ -82,6 +82,7 @@ class ValetudoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         normalized = {
             "raw": raw,
+            "raw_state": state,
             "battery_level": battery_level,
             "battery_flag": battery_flag,
             "dock_status": _attribute_value(attributes, "DockStatusStateAttribute"),

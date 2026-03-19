@@ -3,7 +3,7 @@
 from datetime import timedelta
 
 DOMAIN = "valetudo_rest"
-PLATFORMS = ["vacuum", "sensor", "binary_sensor", "select"]
+PLATFORMS = ["vacuum", "sensor", "binary_sensor", "select", "camera"]
 
 CONF_SCAN_INTERVAL = "scan_interval"
 DEFAULT_NAME = "Valetudo"

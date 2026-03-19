@@ -12,6 +12,7 @@ Current features:
 
 - config flow
 - vacuum entity
+- map camera rendered from Valetudo REST map data
 - segment cleaning via `vacuum.send_command`
 - selects for fan speed, water grade, and operation mode
 - sensors for battery, status, dock status, segment count, and consumables
