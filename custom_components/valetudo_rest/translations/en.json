@@ -1,0 +1,17 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Add Valetudo REST vacuum",
+        "data": {
+          "host": "Host",
+          "name": "Name",
+          "scan_interval": "Scan interval (seconds)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to Valetudo"
+    }
+  }
+}

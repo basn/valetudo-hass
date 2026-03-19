@@ -1,0 +1,11 @@
+{
+  "domain": "valetudo_rest",
+  "name": "Valetudo REST",
+  "codeowners": ["@basn"],
+  "config_flow": true,
+  "documentation": "https://github.com/Hypfer/Valetudo",
+  "iot_class": "local_polling",
+  "loggers": ["custom_components.valetudo_rest"],
+  "requirements": [],
+  "version": "0.1.0"
+}
