@@ -2,5 +2,6 @@
   "name": "Valetudo HASS",
   "content_in_root": false,
   "render_readme": true,
+  "icon": "mdi:robot-vacuum",
   "homeassistant": "2026.3.0"
 }
