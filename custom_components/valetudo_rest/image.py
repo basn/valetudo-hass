@@ -1,11 +1,11 @@
-"""Camera platform for Valetudo REST."""
+"""Image platform for Valetudo REST."""
 
 from __future__ import annotations
 
 from io import BytesIO
 import math
 
-from homeassistant.components.camera import Camera
+from homeassistant.components.image import ImageEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -36,23 +36,28 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up Valetudo camera."""
+    """Set up Valetudo image entity."""
     coordinator: ValetudoCoordinator = entry.runtime_data
-    async_add_entities([ValetudoMapCamera(coordinator, entry.entry_id)])
+    async_add_entities([ValetudoMapImage(coordinator, entry.entry_id)])
 
 
-class ValetudoMapCamera(ValetudoRestEntity, Camera):
-    """Rendered Valetudo map camera."""
+class ValetudoMapImage(ValetudoRestEntity, ImageEntity):
+    """Rendered Valetudo map image."""
 
     _attr_name = "Map"
+    _attr_content_type = "image/png"
     _attr_should_poll = False
 
     def __init__(self, coordinator: ValetudoCoordinator, entry_id: str) -> None:
         super().__init__(coordinator, entry_id)
         self._attr_unique_id = f"{entry_id}_map"
-        self._attr_content_type = "image/png"
 
-    async def async_camera_image(self, width: int | None = None, height: int | None = None) -> bytes | None:
+    @property
+    def available(self) -> bool:
+        """Return entity availability."""
+        return super().available and Image is not None and self.coordinator.data.get("raw_state", {}).get("map") is not None
+
+    async def async_image(self) -> bytes | None:
         """Render the latest Valetudo map as a PNG."""
         if Image is None or ImageDraw is None:
             return None
@@ -68,7 +73,7 @@ class ValetudoMapCamera(ValetudoRestEntity, Camera):
         if map_width <= 0 or map_height <= 0:
             return None
 
-        target_width = width or 768
+        target_width = 768
         scale = max(map_width / target_width, 1)
         render_width = max(1, int(map_width / scale))
         render_height = max(1, int(map_height / scale))
@@ -98,7 +103,7 @@ class ValetudoMapCamera(ValetudoRestEntity, Camera):
                 angle = entity.get("metaData", {}).get("angle", 0)
                 self._draw_heading(draw, x, y, angle)
 
-            elif entity_type == "path" and len(points) >= 4:
+            elif entity_type == "path" and len(points) >= 4 and len(points) % 2 == 0:
                 path = []
                 for i in range(0, len(points), 2):
                     path.append(self._scaled_point(points[i], points[i + 1], scale))
