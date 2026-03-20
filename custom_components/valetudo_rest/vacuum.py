@@ -87,6 +87,9 @@ class ValetudoRestVacuum(ValetudoRestEntity, StateVacuumEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return extra state attributes."""
+        seg_props = self.coordinator.data.get("segment_properties") or {}
+        iter_count = seg_props.get("iterationCount") or {}
+        
         return {
             "dock_status": self.coordinator.data.get("dock_status"),
             "status_flag": self.coordinator.data.get("status_flag"),
@@ -95,12 +98,8 @@ class ValetudoRestVacuum(ValetudoRestEntity, StateVacuumEntity):
             "water_grade": self.coordinator.data.get("water_grade"),
             "mop_attached": self.coordinator.data.get("mop_attached"),
             "segment_count": self.coordinator.data.get("segment_count"),
-            "custom_order_supported": self.coordinator.data.get("segment_properties", {}).get(
-                "customOrderSupport", False
-            ),
-            "max_iterations": self.coordinator.data.get("segment_properties", {})
-            .get("iterationCount", {})
-            .get("max"),
+            "custom_order_supported": seg_props.get("customOrderSupport", False),
+            "max_iterations": iter_count.get("max"),
             "map_nonce": self.coordinator.data.get("map_nonce"),
             "map_data_url": MAP_VIEW_URL.format(entry_id=self._entry_id),
         }
@@ -146,8 +145,11 @@ class ValetudoRestVacuum(ValetudoRestEntity, StateVacuumEntity):
         
         if command == COMMAND_SEGMENT_CLEAN:
             data = params if isinstance(params, dict) else {}
+            segment_ids = [str(segment) for segment in data.get(ATTR_SEGMENT_IDS, [])]
+            if not segment_ids:
+                return
             await self.coordinator.client.segment_clean(
-                segment_ids=[str(segment) for segment in data.get(ATTR_SEGMENT_IDS, [])],
+                segment_ids=segment_ids,
                 iterations=int(data.get(ATTR_ITERATIONS, 1)),
                 custom_order=bool(data.get(ATTR_CUSTOM_ORDER, True)),
             )

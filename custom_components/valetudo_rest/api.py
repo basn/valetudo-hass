@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from typing import Any
 
 from aiohttp import ClientError, ClientSession
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class ValetudoApiError(Exception):
@@ -121,25 +124,31 @@ class ValetudoApiClient:
 
     async def fetch_all(self) -> dict[str, Any]:
         """Fetch the core REST payloads used by entities."""
-        endpoints = [
-            ("state", self.get_state()),
-            ("segments", self.get_segments()),
-            ("segment_properties", self.get_segment_properties()),
-            ("consumables", self.get_consumables()),
-            ("fan_presets", self.get_fan_presets()),
-            ("water_presets", self.get_water_presets()),
-            ("operation_mode_presets", self.get_operation_mode_presets()),
+        # State is critical - if this fails, the whole update should fail
+        try:
+            state = await self.get_state()
+        except ValetudoApiError:
+            raise
+        
+        # These are optional capabilities - if they fail, return empty defaults
+        optional_endpoints = [
+            ("segments", self.get_segments, []),
+            ("segment_properties", self.get_segment_properties, {}),
+            ("consumables", self.get_consumables, []),
+            ("fan_presets", self.get_fan_presets, []),
+            ("water_presets", self.get_water_presets, []),
+            ("operation_mode_presets", self.get_operation_mode_presets, []),
         ]
         
-        results = await asyncio.gather(
-            *[endpoint[1] for endpoint in endpoints],
-            return_exceptions=True,
-        )
+        data = {
+            "state": state,
+        }
         
-        data = {}
-        for (key, _), result in zip(endpoints, results):
-            if isinstance(result, Exception):
-                raise ValetudoApiError(f"Failed to fetch {key}: {result}") from result
-            data[key] = result
+        for key, coro_func, default in optional_endpoints:
+            try:
+                data[key] = await coro_func()
+            except ValetudoApiError as err:
+                _LOGGER.debug("Failed to fetch %s (capability may be unavailable): %s", key, err)
+                data[key] = default
             
         return data
