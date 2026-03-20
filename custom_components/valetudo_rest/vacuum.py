@@ -142,6 +142,8 @@ class ValetudoRestVacuum(ValetudoRestEntity, StateVacuumEntity):
         **kwargs: Any,
     ) -> None:
         """Send custom Valetudo commands."""
+        handled = False
+        
         if command == COMMAND_SEGMENT_CLEAN:
             data = params if isinstance(params, dict) else {}
             await self.coordinator.client.segment_clean(
@@ -149,15 +151,22 @@ class ValetudoRestVacuum(ValetudoRestEntity, StateVacuumEntity):
                 iterations=int(data.get(ATTR_ITERATIONS, 1)),
                 custom_order=bool(data.get(ATTR_CUSTOM_ORDER, True)),
             )
+            handled = True
         elif command == COMMAND_LOCATE:
             await self.coordinator.client.locate()
+            handled = True
         elif command == COMMAND_HOME:
             await self.coordinator.client.basic_action("home")
+            handled = True
         elif command == COMMAND_PAUSE:
             await self.coordinator.client.basic_action("pause")
+            handled = True
         elif command == COMMAND_STOP:
             await self.coordinator.client.basic_action("stop")
+            handled = True
         elif command == COMMAND_START:
             await self.coordinator.client.basic_action("start")
-
-        await self.coordinator.async_request_refresh()
+            handled = True
+        
+        if handled:
+            await self.coordinator.async_request_refresh()

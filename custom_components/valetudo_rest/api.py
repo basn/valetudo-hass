@@ -121,29 +121,25 @@ class ValetudoApiClient:
 
     async def fetch_all(self) -> dict[str, Any]:
         """Fetch the core REST payloads used by entities."""
-        (
-            state,
-            segments,
-            segment_properties,
-            consumables,
-            fan_presets,
-            water_presets,
-            operation_mode_presets,
-        ) = await asyncio.gather(
-            self.get_state(),
-            self.get_segments(),
-            self.get_segment_properties(),
-            self.get_consumables(),
-            self.get_fan_presets(),
-            self.get_water_presets(),
-            self.get_operation_mode_presets(),
+        endpoints = [
+            ("state", self.get_state()),
+            ("segments", self.get_segments()),
+            ("segment_properties", self.get_segment_properties()),
+            ("consumables", self.get_consumables()),
+            ("fan_presets", self.get_fan_presets()),
+            ("water_presets", self.get_water_presets()),
+            ("operation_mode_presets", self.get_operation_mode_presets()),
+        ]
+        
+        results = await asyncio.gather(
+            *[endpoint[1] for endpoint in endpoints],
+            return_exceptions=True,
         )
-        return {
-            "state": state,
-            "segments": segments,
-            "segment_properties": segment_properties,
-            "consumables": consumables,
-            "fan_presets": fan_presets,
-            "water_presets": water_presets,
-            "operation_mode_presets": operation_mode_presets,
-        }
+        
+        data = {}
+        for (key, _), result in zip(endpoints, results):
+            if isinstance(result, Exception):
+                raise ValetudoApiError(f"Failed to fetch {key}: {result}") from result
+            data[key] = result
+            
+        return data

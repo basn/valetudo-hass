@@ -96,9 +96,9 @@ class ValetudoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "segments": raw.get("segments", []),
             "segment_properties": raw.get("segment_properties", {}),
             "consumables": {
-                f"{item['type']}_{item.get('subType', 'main')}": item["remaining"]["value"]
+                f"{item.get('type', 'unknown')}_{item.get('subType', 'main')}": item.get("remaining", {}).get("value")
                 for item in raw.get("consumables", [])
-                if isinstance(item, dict) and "remaining" in item
+                if isinstance(item, dict)
             },
             "fan_presets": raw.get("fan_presets", []),
             "water_presets": raw.get("water_presets", []),
