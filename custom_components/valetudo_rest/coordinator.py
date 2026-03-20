@@ -17,35 +17,35 @@ _LOGGER = logging.getLogger(__name__)
 
 def _attribute_value(attributes: list[dict[str, Any]], attr_type: str, key: str = "value") -> Any:
     for attr in attributes:
-        if attr.get("__class") == attr_type:
+        if isinstance(attr, dict) and attr.get("__class") == attr_type:
             return attr.get(key)
     return None
 
 
 def _preset_value(attributes: list[dict[str, Any]], preset_type: str) -> Any:
     for attr in attributes:
-        if attr.get("__class") == "PresetSelectionStateAttribute" and attr.get("type") == preset_type:
+        if isinstance(attr, dict) and attr.get("__class") == "PresetSelectionStateAttribute" and attr.get("type") == preset_type:
             return attr.get("value")
     return None
 
 
 def _attachment_state(attributes: list[dict[str, Any]], attachment_type: str) -> bool | None:
     for attr in attributes:
-        if attr.get("__class") == "AttachmentStateAttribute" and attr.get("type") == attachment_type:
+        if isinstance(attr, dict) and attr.get("__class") == "AttachmentStateAttribute" and attr.get("type") == attachment_type:
             return attr.get("attached")
     return None
 
 
 def _battery_state(attributes: list[dict[str, Any]]) -> tuple[int | None, str | None]:
     for attr in attributes:
-        if attr.get("__class") == "BatteryStateAttribute":
+        if isinstance(attr, dict) and attr.get("__class") == "BatteryStateAttribute":
             return attr.get("level"), attr.get("flag")
     return None, None
 
 
 def _status_state(attributes: list[dict[str, Any]]) -> tuple[str | None, str | None]:
     for attr in attributes:
-        if attr.get("__class") == "StatusStateAttribute":
+        if isinstance(attr, dict) and attr.get("__class") == "StatusStateAttribute":
             return attr.get("value"), attr.get("flag")
     return None, None
 
@@ -55,6 +55,13 @@ def _ensure_list(value: Any) -> list:
     if isinstance(value, list):
         return value
     return []
+
+
+def _ensure_dict(value: Any) -> dict:
+    """Ensure value is a dict, returning empty dict if not."""
+    if isinstance(value, dict):
+        return value
+    return {}
 
 
 class ValetudoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
@@ -82,7 +89,7 @@ class ValetudoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         except ValetudoApiError as err:
             raise UpdateFailed(str(err)) from err
 
-        state = raw.get("state") or {}
+        state = _ensure_dict(raw.get("state"))
         attributes = _ensure_list(state.get("attributes"))
         battery_level, battery_flag = _battery_state(attributes)
         status, status_flag = _status_state(attributes)
@@ -103,7 +110,7 @@ class ValetudoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "mop_attached": _attachment_state(attributes, "mop"),
             "segment_count": len(segments),
             "segments": segments,
-            "segment_properties": raw.get("segment_properties") or {},
+            "segment_properties": _ensure_dict(raw.get("segment_properties")),
             "consumables": {
                 f"{item.get('type', 'unknown')}_{item.get('subType', 'main')}": (item.get("remaining") or {}).get("value")
                 for item in consumables
@@ -112,10 +119,10 @@ class ValetudoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "fan_presets": _ensure_list(raw.get("fan_presets")),
             "water_presets": _ensure_list(raw.get("water_presets")),
             "operation_mode_presets": _ensure_list(raw.get("operation_mode_presets")),
-            "map_nonce": ((state.get("map") or {}).get("metaData") or {}).get("nonce"),
+            "map_nonce": _ensure_dict(_ensure_dict(state.get("map")).get("metaData")).get("nonce"),
             "meta": {
-                "pixel_size": (state.get("map") or {}).get("pixelSize"),
-                "map_size": (state.get("map") or {}).get("size"),
+                "pixel_size": _ensure_dict(state.get("map")).get("pixelSize"),
+                "map_size": _ensure_dict(state.get("map")).get("size"),
             },
         }
         return normalized
