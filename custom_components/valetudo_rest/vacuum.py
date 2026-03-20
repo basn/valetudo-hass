@@ -106,26 +106,32 @@ class ValetudoRestVacuum(ValetudoRestEntity, StateVacuumEntity):
         }
 
     async def async_start(self) -> None:
+        """Start the vacuum."""
         await self.coordinator.client.basic_action("start")
         await self.coordinator.async_request_refresh()
 
     async def async_stop(self, **kwargs: Any) -> None:
+        """Stop the vacuum."""
         await self.coordinator.client.basic_action("stop")
         await self.coordinator.async_request_refresh()
 
     async def async_pause(self) -> None:
+        """Pause the vacuum."""
         await self.coordinator.client.basic_action("pause")
         await self.coordinator.async_request_refresh()
 
     async def async_return_to_base(self, **kwargs: Any) -> None:
+        """Return the vacuum to base."""
         await self.coordinator.client.basic_action("home")
         await self.coordinator.async_request_refresh()
 
     async def async_locate(self, **kwargs: Any) -> None:
+        """Locate the vacuum."""
         await self.coordinator.client.locate()
         await self.coordinator.async_request_refresh()
 
     async def async_set_fan_speed(self, fan_speed: str, **kwargs: Any) -> None:
+        """Set the fan speed."""
         await self.coordinator.client.set_fan_preset(fan_speed)
         await self.coordinator.async_request_refresh()
 

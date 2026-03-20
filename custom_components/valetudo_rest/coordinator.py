@@ -75,7 +75,7 @@ class ValetudoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         except ValetudoApiError as err:
             raise UpdateFailed(str(err)) from err
 
-        state = raw["state"]
+        state = raw.get("state", {})
         attributes = state.get("attributes", [])
         battery_level, battery_flag = _battery_state(attributes)
         status, status_flag = _status_state(attributes)
@@ -92,16 +92,17 @@ class ValetudoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "status": status,
             "status_flag": status_flag,
             "mop_attached": _attachment_state(attributes, "mop"),
-            "segment_count": len(raw["segments"]),
-            "segments": raw["segments"],
-            "segment_properties": raw["segment_properties"],
+            "segment_count": len(raw.get("segments", [])),
+            "segments": raw.get("segments", []),
+            "segment_properties": raw.get("segment_properties", {}),
             "consumables": {
                 f"{item['type']}_{item.get('subType', 'main')}": item["remaining"]["value"]
-                for item in raw["consumables"]
+                for item in raw.get("consumables", [])
+                if isinstance(item, dict) and "remaining" in item
             },
-            "fan_presets": raw["fan_presets"],
-            "water_presets": raw["water_presets"],
-            "operation_mode_presets": raw["operation_mode_presets"],
+            "fan_presets": raw.get("fan_presets", []),
+            "water_presets": raw.get("water_presets", []),
+            "operation_mode_presets": raw.get("operation_mode_presets", []),
             "map_nonce": state.get("map", {}).get("metaData", {}).get("nonce"),
             "meta": {
                 "pixel_size": state.get("map", {}).get("pixelSize"),
