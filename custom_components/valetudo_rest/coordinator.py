@@ -75,8 +75,8 @@ class ValetudoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         except ValetudoApiError as err:
             raise UpdateFailed(str(err)) from err
 
-        state = raw.get("state", {})
-        attributes = state.get("attributes", [])
+        state = raw.get("state") or {}
+        attributes = state.get("attributes") or []
         battery_level, battery_flag = _battery_state(attributes)
         status, status_flag = _status_state(attributes)
 
@@ -92,21 +92,21 @@ class ValetudoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "status": status,
             "status_flag": status_flag,
             "mop_attached": _attachment_state(attributes, "mop"),
-            "segment_count": len(raw.get("segments", [])),
-            "segments": raw.get("segments", []),
-            "segment_properties": raw.get("segment_properties", {}),
+            "segment_count": len((raw.get("segments") or [])),
+            "segments": raw.get("segments") or [],
+            "segment_properties": raw.get("segment_properties") or {},
             "consumables": {
                 f"{item.get('type', 'unknown')}_{item.get('subType', 'main')}": (item.get("remaining") or {}).get("value")
-                for item in raw.get("consumables", [])
+                for item in (raw.get("consumables") or [])
                 if isinstance(item, dict)
             },
-            "fan_presets": raw.get("fan_presets", []),
-            "water_presets": raw.get("water_presets", []),
-            "operation_mode_presets": raw.get("operation_mode_presets", []),
-            "map_nonce": state.get("map", {}).get("metaData", {}).get("nonce"),
+            "fan_presets": raw.get("fan_presets") or [],
+            "water_presets": raw.get("water_presets") or [],
+            "operation_mode_presets": raw.get("operation_mode_presets") or [],
+            "map_nonce": ((state.get("map") or {}).get("metaData") or {}).get("nonce"),
             "meta": {
-                "pixel_size": state.get("map", {}).get("pixelSize"),
-                "map_size": state.get("map", {}).get("size"),
+                "pixel_size": (state.get("map") or {}).get("pixelSize"),
+                "map_size": (state.get("map") or {}).get("size"),
             },
         }
         return normalized

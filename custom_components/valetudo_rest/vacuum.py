@@ -82,7 +82,7 @@ class ValetudoRestVacuum(ValetudoRestEntity, StateVacuumEntity):
     @property
     def fan_speed_list(self) -> list[str]:
         """Return available fan speeds."""
-        return self.coordinator.data.get("fan_presets", [])
+        return self.coordinator.data.get("fan_presets") or []
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -145,7 +145,7 @@ class ValetudoRestVacuum(ValetudoRestEntity, StateVacuumEntity):
         
         if command == COMMAND_SEGMENT_CLEAN:
             data = params if isinstance(params, dict) else {}
-            segment_ids = [str(segment) for segment in data.get(ATTR_SEGMENT_IDS, [])]
+            segment_ids = [str(segment) for segment in (data.get(ATTR_SEGMENT_IDS) or [])]
             if not segment_ids:
                 return
             await self.coordinator.client.segment_clean(
