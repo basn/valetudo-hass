@@ -112,7 +112,7 @@ class ValetudoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "segments": segments,
             "segment_properties": _ensure_dict(raw.get("segment_properties")),
             "consumables": {
-                f"{item.get('type', 'unknown')}_{item.get('subType', 'main')}": (item.get("remaining") or {}).get("value")
+                f"{item.get('type', 'unknown')}_{item.get('subType', 'main')}": _ensure_dict(item.get("remaining")).get("value")
                 for item in consumables
                 if isinstance(item, dict)
             },
