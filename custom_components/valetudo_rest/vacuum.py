@@ -88,7 +88,13 @@ class ValetudoRestVacuum(ValetudoRestEntity, StateVacuumEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return extra state attributes."""
         seg_props = self.coordinator.data.get("segment_properties") or {}
-        iter_count = seg_props.get("iterationCount") or {}
+        
+        # Safely handle iterationCount whether it's a dict or other type
+        iteration_count_raw = seg_props.get("iterationCount")
+        if isinstance(iteration_count_raw, dict):
+            max_iterations = iteration_count_raw.get("max")
+        else:
+            max_iterations = None
         
         return {
             "dock_status": self.coordinator.data.get("dock_status"),
@@ -99,7 +105,7 @@ class ValetudoRestVacuum(ValetudoRestEntity, StateVacuumEntity):
             "mop_attached": self.coordinator.data.get("mop_attached"),
             "segment_count": self.coordinator.data.get("segment_count"),
             "custom_order_supported": seg_props.get("customOrderSupport", False),
-            "max_iterations": iter_count.get("max"),
+            "max_iterations": max_iterations,
             "map_nonce": self.coordinator.data.get("map_nonce"),
             "map_data_url": MAP_VIEW_URL.format(entry_id=self._entry_id),
         }
@@ -145,12 +151,25 @@ class ValetudoRestVacuum(ValetudoRestEntity, StateVacuumEntity):
         
         if command == COMMAND_SEGMENT_CLEAN:
             data = params if isinstance(params, dict) else {}
-            segment_ids = [str(segment) for segment in (data.get(ATTR_SEGMENT_IDS) or [])]
-            if not segment_ids:
+            raw_segment_ids = data.get(ATTR_SEGMENT_IDS)
+            
+            # Ensure segment_ids is a list
+            if not isinstance(raw_segment_ids, list):
                 return
+            if not raw_segment_ids:
+                return
+                
+            segment_ids = [str(segment) for segment in raw_segment_ids]
+            
+            # Safely convert iterations to int, defaulting to 1
+            try:
+                iterations = int(data.get(ATTR_ITERATIONS) or 1)
+            except (ValueError, TypeError):
+                iterations = 1
+                
             await self.coordinator.client.segment_clean(
                 segment_ids=segment_ids,
-                iterations=int(data.get(ATTR_ITERATIONS, 1)),
+                iterations=iterations,
                 custom_order=bool(data.get(ATTR_CUSTOM_ORDER, True)),
             )
             handled = True

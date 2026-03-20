@@ -50,6 +50,13 @@ def _status_state(attributes: list[dict[str, Any]]) -> tuple[str | None, str | N
     return None, None
 
 
+def _ensure_list(value: Any) -> list:
+    """Ensure value is a list, returning empty list if not."""
+    if isinstance(value, list):
+        return value
+    return []
+
+
 class ValetudoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Coordinator for Valetudo REST data."""
 
@@ -76,9 +83,11 @@ class ValetudoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             raise UpdateFailed(str(err)) from err
 
         state = raw.get("state") or {}
-        attributes = state.get("attributes") or []
+        attributes = _ensure_list(state.get("attributes"))
         battery_level, battery_flag = _battery_state(attributes)
         status, status_flag = _status_state(attributes)
+        segments = _ensure_list(raw.get("segments"))
+        consumables = _ensure_list(raw.get("consumables"))
 
         normalized = {
             "raw": raw,
@@ -92,17 +101,17 @@ class ValetudoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "status": status,
             "status_flag": status_flag,
             "mop_attached": _attachment_state(attributes, "mop"),
-            "segment_count": len((raw.get("segments") or [])),
-            "segments": raw.get("segments") or [],
+            "segment_count": len(segments),
+            "segments": segments,
             "segment_properties": raw.get("segment_properties") or {},
             "consumables": {
                 f"{item.get('type', 'unknown')}_{item.get('subType', 'main')}": (item.get("remaining") or {}).get("value")
-                for item in (raw.get("consumables") or [])
+                for item in consumables
                 if isinstance(item, dict)
             },
-            "fan_presets": raw.get("fan_presets") or [],
-            "water_presets": raw.get("water_presets") or [],
-            "operation_mode_presets": raw.get("operation_mode_presets") or [],
+            "fan_presets": _ensure_list(raw.get("fan_presets")),
+            "water_presets": _ensure_list(raw.get("water_presets")),
+            "operation_mode_presets": _ensure_list(raw.get("operation_mode_presets")),
             "map_nonce": ((state.get("map") or {}).get("metaData") or {}).get("nonce"),
             "meta": {
                 "pixel_size": (state.get("map") or {}).get("pixelSize"),
