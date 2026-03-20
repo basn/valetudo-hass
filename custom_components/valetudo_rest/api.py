@@ -35,8 +35,6 @@ class ValetudoApiClient:
 
                 text = await response.text()
                 return text or None
-        except ValetudoApiError:
-            raise
         except (TimeoutError, asyncio.TimeoutError, ClientError, ValueError) as err:
             raise ValetudoApiError(f"{method} {path} failed: {err}") from err
 
@@ -125,10 +123,7 @@ class ValetudoApiClient:
     async def fetch_all(self) -> dict[str, Any]:
         """Fetch the core REST payloads used by entities."""
         # State is critical - if this fails, the whole update should fail
-        try:
-            state = await self.get_state()
-        except ValetudoApiError:
-            raise
+        state = await self.get_state()
         
         # These are optional capabilities - if they fail, return empty defaults
         optional_endpoints = [
