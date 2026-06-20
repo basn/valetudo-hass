@@ -27,3 +27,20 @@ class ValetudoRestEntity(CoordinatorEntity[ValetudoCoordinator]):
             manufacturer="Valetudo",
             model="Vacuum Robot",
         )
+
+
+def format_operation_mode(value: str | None) -> str | None:
+    """Return a presentation-friendly operation mode string."""
+    if not isinstance(value, str):
+        return None
+
+    normalized = value.replace("_", " ").replace("-", " ").strip()
+    return " ".join(word.capitalize() for word in normalized.split())
+
+
+def normalize_operation_mode(value: str | None) -> str | None:
+    """Return a backend-stable comparable operation mode value."""
+    if not isinstance(value, str):
+        return None
+
+    return value.replace("_", " ").replace("-", " ").strip().casefold()

@@ -22,7 +22,7 @@ from .const import (
     MAP_VIEW_URL,
 )
 from .coordinator import ValetudoCoordinator
-from .entity import ValetudoRestEntity
+from .entity import ValetudoRestEntity, format_operation_mode
 
 
 async def async_setup_entry(
@@ -70,11 +70,6 @@ class ValetudoRestVacuum(ValetudoRestEntity, StateVacuumEntity):
         return VacuumActivity.IDLE
 
     @property
-    def battery_level(self) -> int | None:
-        """Return battery level."""
-        return self.coordinator.data.get("battery_level")
-
-    @property
     def fan_speed(self) -> str | None:
         """Return current fan speed."""
         return self.coordinator.data.get("fan_speed")
@@ -100,7 +95,7 @@ class ValetudoRestVacuum(ValetudoRestEntity, StateVacuumEntity):
             "dock_status": self.coordinator.data.get("dock_status"),
             "status_flag": self.coordinator.data.get("status_flag"),
             "battery_flag": self.coordinator.data.get("battery_flag"),
-            "operation_mode": self.coordinator.data.get("operation_mode"),
+            "operation_mode": self._format_operation_mode(),
             "water_grade": self.coordinator.data.get("water_grade"),
             "mop_attached": self.coordinator.data.get("mop_attached"),
             "segment_count": self.coordinator.data.get("segment_count"),
@@ -191,3 +186,7 @@ class ValetudoRestVacuum(ValetudoRestEntity, StateVacuumEntity):
         
         if handled:
             await self.coordinator.async_request_refresh()
+
+    def _format_operation_mode(self) -> str | None:
+        raw_value = self.coordinator.data.get("operation_mode")
+        return format_operation_mode(raw_value)

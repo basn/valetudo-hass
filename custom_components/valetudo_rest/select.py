@@ -11,7 +11,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .coordinator import ValetudoCoordinator
-from .entity import ValetudoRestEntity
+from .entity import ValetudoRestEntity, format_operation_mode, normalize_operation_mode
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -75,12 +75,43 @@ class ValetudoSelect(ValetudoRestEntity, SelectEntity):
 
     @property
     def current_option(self) -> str | None:
-        return self.coordinator.data.get(self.entity_description.value_key)
+        raw_value = self.coordinator.data.get(self.entity_description.value_key)
+
+        if self.entity_description.key == "operation_mode":
+            return format_operation_mode(raw_value) or raw_value
+
+        return raw_value
 
     @property
     def options(self) -> list[str]:
-        return self.coordinator.data.get(self.entity_description.options_key, [])
+        raw_options = self.coordinator.data.get(self.entity_description.options_key, []) or []
+
+        if self.entity_description.key != "operation_mode":
+            return list(raw_options)
+
+        display_options: list[str] = []
+        for raw_option in raw_options:
+            display = format_operation_mode(raw_option) or raw_option
+            if display not in display_options:
+                display_options.append(display)
+        return display_options
 
     async def async_select_option(self, option: str) -> None:
+        if self.entity_description.key == "operation_mode":
+            option = self._coerce_operation_mode_option(option)
+
         await getattr(self.coordinator.client, self.entity_description.setter)(option)
         await self.coordinator.async_request_refresh()
+
+    def _coerce_operation_mode_option(self, option: str) -> str:
+        raw_options = self.coordinator.data.get("operation_mode_presets", []) or []
+
+        if option in raw_options:
+            return option
+
+        normalized = normalize_operation_mode(option)
+        for raw_option in raw_options:
+            if normalize_operation_mode(raw_option) == normalized:
+                return raw_option
+
+        return option

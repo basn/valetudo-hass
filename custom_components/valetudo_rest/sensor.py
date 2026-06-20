@@ -11,7 +11,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .coordinator import ValetudoCoordinator
-from .entity import ValetudoRestEntity
+from .entity import ValetudoRestEntity, format_operation_mode
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -111,7 +111,10 @@ class ValetudoSensor(ValetudoRestEntity, SensorEntity):
 
     @property
     def native_value(self):
-        return self.coordinator.data.get(self.entity_description.value_key)
+        value = self.coordinator.data.get(self.entity_description.value_key)
+        if self.entity_description.key == "operation_mode":
+            return format_operation_mode(value) or value
+        return value
 
 
 class ValetudoConsumableSensor(ValetudoRestEntity, SensorEntity):
